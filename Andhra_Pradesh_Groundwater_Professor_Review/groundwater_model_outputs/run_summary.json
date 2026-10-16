@@ -1,0 +1,130 @@
+{
+  "source_file": "/Users/geetikarupani/Downloads/andhra_pradesh_groundwater_data_2020_2025.xlsx",
+  "raw_rows": 57177,
+  "raw_columns": 27,
+  "clean_rows": 57176,
+  "clean_columns": 33,
+  "features": [
+    "dataValue",
+    "hour_sin",
+    "hour_cos",
+    "dayofyear_sin",
+    "dayofyear_cos",
+    "month_sin",
+    "month_cos",
+    "latitude",
+    "longitude",
+    "wellDepth"
+  ],
+  "history_length": 12,
+  "train_windows": 39051,
+  "validation_windows": 8337,
+  "test_windows": 8459,
+  "top_three": [
+    "LSTM + CNN",
+    "CNN + BiLSTM",
+    "ConvLSTM + Attention"
+  ],
+  "top_two": [
+    "LSTM + CNN",
+    "CNN + BiLSTM"
+  ],
+  "final_model": "LSTM + CNN",
+  "metrics_five": [
+    {
+      "model": "LSTM + CNN",
+      "test_windows": 8459,
+      "MAE_m": 1.0686385797243527,
+      "RMSE_m": 2.3072377543460876,
+      "R2": 0.9668702329240015,
+      "sign_agreement_pct": 95.96879063719116
+    },
+    {
+      "model": "CNN + BiLSTM",
+      "test_windows": 8459,
+      "MAE_m": 0.9512661231453123,
+      "RMSE_m": 2.7735214954229033,
+      "R2": 0.9521263262935463,
+      "sign_agreement_pct": 95.21220002364346
+    },
+    {
+      "model": "ConvLSTM + Attention",
+      "test_windows": 8459,
+      "MAE_m": 1.2038585514640576,
+      "RMSE_m": 3.224731879225838,
+      "R2": 0.9352826232620242,
+      "sign_agreement_pct": 96.42983804232179
+    },
+    {
+      "model": "Transformer + LSTM",
+      "test_windows": 8459,
+      "MAE_m": 1.1036314605153723,
+      "RMSE_m": 3.3071618159381804,
+      "R2": 0.9319317518855625,
+      "sign_agreement_pct": 94.12460101666863
+    },
+    {
+      "model": "LSTM + Attention",
+      "test_windows": 8459,
+      "MAE_m": 1.6615208614859396,
+      "RMSE_m": 3.8220443670843776,
+      "R2": 0.9090871795309265,
+      "sign_agreement_pct": 94.12460101666863
+    }
+  ],
+  "metrics_three": [
+    {
+      "model": "LSTM + CNN",
+      "test_windows": 8459,
+      "MAE_m": 1.0686385797243527,
+      "RMSE_m": 2.3072377543460876,
+      "R2": 0.9668702329240015,
+      "sign_agreement_pct": 95.96879063719116
+    },
+    {
+      "model": "CNN + BiLSTM",
+      "test_windows": 8459,
+      "MAE_m": 0.9512661231453123,
+      "RMSE_m": 2.7735214954229033,
+      "R2": 0.9521263262935463,
+      "sign_agreement_pct": 95.21220002364346
+    },
+    {
+      "model": "ConvLSTM + Attention",
+      "test_windows": 8459,
+      "MAE_m": 1.2038585514640576,
+      "RMSE_m": 3.224731879225838,
+      "R2": 0.9352826232620242,
+      "sign_agreement_pct": 96.42983804232179
+    }
+  ],
+  "metrics_two": [
+    {
+      "model": "LSTM + CNN",
+      "test_windows": 8459,
+      "MAE_m": 1.0686385797243527,
+      "RMSE_m": 2.3072377543460876,
+      "R2": 0.9668702329240015,
+      "sign_agreement_pct": 95.96879063719116
+    },
+    {
+      "model": "CNN + BiLSTM",
+      "test_windows": 8459,
+      "MAE_m": 0.9512661231453123,
+      "RMSE_m": 2.7735214954229033,
+      "R2": 0.9521263262935463,
+      "sign_agreement_pct": 95.21220002364346
+    }
+  ],
+  "metrics_final": [
+    {
+      "model": "LSTM + CNN",
+      "test_windows": 8459,
+      "MAE_m": 0.8621304308596024,
+      "RMSE_m": 2.057487174285913,
+      "R2": 0.9736544083248512,
+      "sign_agreement_pct": 95.96879063719116
+    }
+  ],
+  "elapsed_seconds": 48.8
+}

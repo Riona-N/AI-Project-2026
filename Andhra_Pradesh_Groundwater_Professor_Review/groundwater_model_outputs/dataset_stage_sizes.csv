@@ -1,0 +1,6 @@
+stage,rows,columns,forecast_windows,train_windows,validation_windows,test_windows
+before preprocessing,57177,27,0,0,0,0
+after preprocessing / five models,57176,39,55847,39051,8337,8459
+top three models,57176,37,55847,39051,8337,8459
+top two models,57176,36,55847,39051,8337,8459
+final model,57176,35,55847,39051,8337,8459
