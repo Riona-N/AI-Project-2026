@@ -28,6 +28,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 ROOT = Path(__file__).resolve().parent
 DEFAULT_INPUT = ROOT / "model_stage_csvs" / "final_algorithms_dataset.csv"
 DEFAULT_REPORT = ROOT / "smote_classification_review.md"
+DEFAULT_SMOTE_EXPORT = ROOT / "model_stage_csvs" / "smote_training_dataset.csv"
 TARGET = "Pollution_Level"
 RANDOM_STATE = 42
 CV_FOLDS = 10
@@ -154,6 +155,74 @@ def make_smotenc_pipeline(y_train: pd.Series) -> ImbalancedPipeline:
             ("classifier", make_random_forest(corrected=True)),
         ]
     )
+
+
+def build_smote_training_export(
+    *,
+    train_x: pd.DataFrame,
+    train_y: pd.Series,
+    distance_preprocessor: ColumnTransformer,
+    resampled_x: pd.DataFrame,
+    resampled_y: pd.Series | np.ndarray,
+) -> pd.DataFrame:
+    """Build a CSV-ready resampled training set in the original feature units."""
+    original_count = len(train_x)
+    resampled_target = np.asarray(resampled_y)
+    original_features = resampled_x.iloc[:original_count]
+
+    if len(resampled_x) < original_count:
+        raise ValueError("SMOTENC returned fewer rows than the original training set.")
+    if not np.array_equal(resampled_target[:original_count], train_y.to_numpy()):
+        raise ValueError(
+            "SMOTENC did not retain original training rows first; "
+            "cannot safely identify synthetic rows for CSV export."
+        )
+    if not np.allclose(
+        original_features[NUMERIC_FEATURES].to_numpy(),
+        distance_preprocessor.transform(train_x)[NUMERIC_FEATURES].to_numpy(),
+    ):
+        raise ValueError(
+            "SMOTENC changed the original training rows or their order; "
+            "cannot safely identify synthetic rows for CSV export."
+        )
+    if not original_features[CATEGORICAL_FEATURES].reset_index(drop=True).equals(
+        train_x[CATEGORICAL_FEATURES].reset_index(drop=True)
+    ):
+        raise ValueError(
+            "SMOTENC changed the original categorical values or their order; "
+            "cannot safely identify synthetic rows for CSV export."
+        )
+
+    scaler = distance_preprocessor.named_transformers_["numeric"]
+    restored_numeric = scaler.inverse_transform(
+        resampled_x[NUMERIC_FEATURES].to_numpy()
+    )
+    export = pd.DataFrame(
+        restored_numeric,
+        columns=NUMERIC_FEATURES,
+    )
+    for feature in CATEGORICAL_FEATURES:
+        export[feature] = resampled_x[feature].to_numpy()
+    export[TARGET] = resampled_target
+    export.insert(
+        0,
+        "SMOTE_Row_Type",
+        np.where(
+            np.arange(len(export)) < original_count,
+            "original_training",
+            "synthetic_smote",
+        ),
+    )
+    export.insert(
+        1,
+        "Source_Row_Index",
+        [
+            *train_x.index.tolist(),
+            *([pd.NA] * (len(export) - original_count)),
+        ],
+    )
+    export.insert(2, "Dataset_Split", "train")
+    return export
 
 
 def balanced_accuracy_with_labels(
@@ -460,6 +529,12 @@ Stratified split, random state {RANDOM_STATE}: **70% train / 15% validation / 15
 
 SMOTENC preserves the categorical `Location` field and synthesizes numeric inputs. Its `k_neighbors` is capped at 5 and reduced when needed to remain below the smallest class count in each training fold. It is applied only to training data. The rarest training class has very few original examples, so its synthetic samples do not replace the need for more real labeled data.
 
+### Exported SMOTENC training CSV
+
+The script writes `{DEFAULT_SMOTE_EXPORT.relative_to(ROOT).as_posix()}`. It contains {sum(resampled_counts.values()):,} training rows: {len(train_x):,} original training rows and {sum(resampled_counts.values()) - len(train_x):,} synthetic rows. It has {features.shape[1]} model features, the `{TARGET}` target, and three tracking columns: `Dataset_Split`, `SMOTE_Row_Type`, and `Source_Row_Index`.
+
+The numeric feature values are converted back from the standardized SMOTENC distance space into their original units before export. Original rows retain their zero-based source CSV row index; synthetic rows have a blank `Source_Row_Index` because SMOTENC generates them from neighboring observations rather than copying one source row. `Hour`, `DayOfWeek`, and `Month` are numeric inputs in this workflow, so synthetic rows may contain fractional values for those time-derived features. This file is a resampled **training set**, not a replacement for the full dataset; validation and test observations are not included or resampled.
+
 ## 10-fold cross-validation
 
 SMOTENC is fitted separately inside each training fold; validation-fold observations are never resampled. Macro-F1 is the primary comparison metric because accuracy is misleading for the class imbalance.
@@ -558,9 +633,26 @@ def main() -> None:
     resampled_x, resampled_y = sampler.fit_resample(scaled_train_x, train_y)
     original_train_counts = class_counts(train_y)
     resampled_counts = class_counts(resampled_y)
+    smote_export = build_smote_training_export(
+        train_x=train_x,
+        train_y=train_y,
+        distance_preprocessor=distance_preprocessor,
+        resampled_x=resampled_x,
+        resampled_y=resampled_y,
+    )
+    DEFAULT_SMOTE_EXPORT.parent.mkdir(parents=True, exist_ok=True)
+    smote_export.to_csv(
+        DEFAULT_SMOTE_EXPORT,
+        index=False,
+        encoding="utf-8-sig",
+    )
     print(
         f"After SMOTE (training only): {len(resampled_x)} rows; "
         f"{markdown_counts(resampled_counts)}"
+    )
+    print(
+        f"SMOTE training CSV: {DEFAULT_SMOTE_EXPORT} "
+        f"({len(smote_export):,} rows; {len(smote_export.columns)} columns)"
     )
 
     corrected_model = make_smotenc_pipeline(train_y)

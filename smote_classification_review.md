@@ -34,6 +34,12 @@ Stratified split, random state 42: **70% train / 15% validation / 15% test** (ro
 
 SMOTENC preserves the categorical `Location` field and synthesizes numeric inputs. Its `k_neighbors` is capped at 5 and reduced when needed to remain below the smallest class count in each training fold. It is applied only to training data. The rarest training class has very few original examples, so its synthetic samples do not replace the need for more real labeled data.
 
+### Exported SMOTENC training CSV
+
+The script writes `model_stage_csvs/smote_training_dataset.csv`. It contains 1,923 training rows: 700 original training rows and 1,223 synthetic rows. It has 12 model features, the `Pollution_Level` target, and three tracking columns: `Dataset_Split`, `SMOTE_Row_Type`, and `Source_Row_Index`.
+
+The numeric feature values are converted back from the standardized SMOTENC distance space into their original units before export. Original rows retain their zero-based source CSV row index; synthetic rows have a blank `Source_Row_Index` because SMOTENC generates them from neighboring observations rather than copying one source row. `Hour`, `DayOfWeek`, and `Month` are numeric inputs in this workflow, so synthetic rows may contain fractional values for those time-derived features. This file is a resampled **training set**, not a replacement for the full dataset; validation and test observations are not included or resampled.
+
 ## 10-fold cross-validation
 
 SMOTENC is fitted separately inside each training fold; validation-fold observations are never resampled. Macro-F1 is the primary comparison metric because accuracy is misleading for the class imbalance.
